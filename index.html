@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI 自媒体教练 / 编导工作台</title>
+  <style>
+    :root {
+      --bg: #f4f6f9;
+      --card: #ffffff;
+      --text: #1f2937;
+      --text-secondary: #6b7280;
+      --border: #e5e7eb;
+      --primary: #4f46e5;
+      --primary-light: #eef2ff;
+      --primary-dark: #4338ca;
+      --accent: #f59e0b;
+      --danger: #ef4444;
+      --success: #10b981;
+      --radius: 12px;
+      --shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -1px rgba(0,0,0,0.03);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* Sidebar */
+    .sidebar {
+      width: 240px;
+      background: #1f2937;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .brand {
+      padding: 24px 20px;
+      border-bottom: 1px solid #374151;
+    }
+    .brand h1 { margin: 0; font-size: 18px; }
+    .brand p { margin: 4px 0 0; font-size: 12px; opacity: 0.7; }
+    .nav { flex: 1; overflow-y: auto; padding: 12px 0; }
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+      color: #d1d5db;
+      font-size: 14px;
+    }
+    .nav-item:hover { background: #374151; color: #fff; }
+    .nav-item.active { background: var(--primary); color: #fff; }
+    .nav-icon { width: 20px; margin-right: 12px; text-align: center; }
+    .sidebar-footer { padding: 16px 20px; border-top: 1px solid #374151; font-size: 12px; opacity: 0.6; }
+
+    /* Main */
+    .main { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .topbar {
+      height: 64px;
+      background: var(--card);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+      flex-shrink: 0;
+    }
+    .topbar h2 { margin: 0; font-size: 20px; }
+    .user-badge { display: flex; align-items: center; gap: 10px; font-size: 14px; color: var(--text-secondary); }
+    .avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--primary-light); color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; }
+
+    .content { flex: 1; overflow-y: auto; padding: 28px; }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      border: 1px solid var(--border);
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+    .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+    .card-title { margin: 0; font-size: 16px; font-weight: 600; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+    .stat-card {
+      background: linear-gradient(135deg, var(--primary-light) 0%, #fff 100%);
+      border: 1px solid var(--primary-light);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .stat-card .number { font-size: 32px; font-weight: 700; color: var(--primary); }
+    .stat-card .label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* Forms */
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-size: 14px; font-weight: 500; margin-bottom: 6px; }
+    input, textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      font-family: inherit;
+    }
+    input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 3px rgba(79,70,229,0.1); }
+    textarea { resize: vertical; min-height: 90px; }
+    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    @media (max-width: 720px) { .form-row { grid-template-columns: 1fr; } }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border-radius: 8px;
+      border: none;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-secondary { background: #fff; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #f9fafb; }
+    .btn-success { background: var(--success); color: #fff; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 6px 12px; font-size: 13px; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Topic Cards */
+    .topic-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .topic-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+    .topic-tag { display: inline-block; font-size: 12px; padding: 3px 8px; border-radius: 999px; background: #fef3c7; color: #92400e; margin-bottom: 8px; }
+    .topic-title { font-weight: 600; margin: 0 0 8px; font-size: 15px; line-height: 1.5; }
+    .topic-meta { font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; }
+    .hooks { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .hook-tag { background: var(--primary-light); color: var(--primary); font-size: 12px; padding: 4px 8px; border-radius: 6px; }
+
+    /* Script Editor */
+    .script-editor { background: #f9fafb; border-radius: 8px; padding: 16px; border: 1px solid var(--border); }
+    .script-section { margin-bottom: 18px; }
+    .script-section h4 { margin: 0 0 8px; font-size: 14px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+    .script-content { background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 14px; font-size: 14px; line-height: 1.8; min-height: 80px; white-space: pre-wrap; }
+
+    /* Analysis result */
+    .analysis-chart { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 16px 0; }
+    .emotion-bubble {
+      background: var(--primary-light);
+      border-radius: var(--radius);
+      padding: 14px;
+      text-align: center;
+    }
+    .emotion-bubble .value { font-size: 22px; font-weight: 700; color: var(--primary); }
+    .emotion-bubble .name { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* Editing */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px;
+      text-align: center;
+      color: var(--text-secondary);
+      background: #fafafa;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .upload-zone:hover { border-color: var(--primary); }
+    .timeline { margin-top: 20px; }
+    .timeline-track { display: flex; align-items: center; gap: 8px; background: #f3f4f6; border-radius: 8px; padding: 12px; overflow-x: auto; }
+    .timeline-clip { background: var(--primary); color: #fff; border-radius: 6px; padding: 8px 12px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+    /* Toast */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+      z-index: 1000;
+      opacity: 0;
+      transform: translateY(-10px);
+      transition: all 0.3s;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+
+    /* Hidden */
+    .hidden { display: none !important; }
+
+    /* Loading */
+    .spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-radius: 50%;
+      border-top-color: #fff;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Empty state */
+    .empty { text-align: center; padding: 48px; color: var(--text-secondary); }
+    .empty-icon { font-size: 40px; margin-bottom: 12px; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 999px; font-size: 12px; font-weight: 500; }
+    .badge-blue { background: #dbeafe; color: #1e40af; }
+    .badge-green { background: #d1fae5; color: #065f46; }
+    .badge-purple { background: #f3e8ff; color: #6b21a8; }
+
+    /* Preset cards */
+    .preset-card {
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+    .preset-card:hover, .preset-card.selected { border-color: var(--primary); background: var(--primary-light); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>AI 自媒体教练</h1>
+      <p>编导工作台</p>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" data-view="dashboard"><span class="nav-icon">🏠</span>工作台</div>
+      <div class="nav-item" data-view="niche"><span class="nav-icon">🎯</span>赛道自测</div>
+      <div class="nav-item" data-view="topics"><span class="nav-icon">🌊</span>每日选题海</div>
+      <div class="nav-item" data-view="scripts"><span class="nav-icon">📝</span>脚本方案</div>
+      <div class="nav-item" data-view="comments"><span class="nav-icon">💬</span>评论区分析</div>
+      <div class="nav-item" data-view="viral"><span class="nav-icon">🔥</span>爆款知识库</div>
+      <div class="nav-item" data-view="edit"><span class="nav-icon">✂️</span>视频精剪</div>
+      <div class="nav-item" data-view="monetize"><span class="nav-icon">💰</span>商业变现</div>
+    </nav>
+    <div class="sidebar-footer">v1.1 · 基于 PRD 构建</div>
+  </aside>
+
+  <main class="main">
+    <header class="topbar">
+      <h2 id="page-title">工作台</h2>
+      <div class="user-badge">
+        <span id="user-niche">未设置赛道</span>
+        <div class="avatar" id="user-avatar">我</div>
+      </div>
+    </header>
+
+    <div class="content">
+      <!-- Dashboard -->
+      <section id="view-dashboard" class="view">
+        <div class="grid">
+          <div class="stat-card">
+            <div class="number" id="stat-niche">-</div>
+            <div class="label">当前赛道</div>
+          </div>
+          <div class="stat-card">
+            <div class="number" id="stat-topics">0</div>
+            <div class="label">今日选题</div>
+          </div>
+          <div class="stat-card">
+            <div class="number" id="stat-scripts">0</div>
+            <div class="label">脚本方案</div>
+          </div>
+          <div class="stat-card">
+            <div class="number" id="stat-ready">0</div>
+            <div class="label">待拍摄</div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">创作主线</h3></div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+            <span class="badge badge-blue">赛道自测</span>→
+            <span class="badge badge-blue">每日选题海</span>→
+            <span class="badge badge-blue">脚本与拍摄指导</span>→
+            <span class="badge badge-purple">视频精剪</span>→
+            <span class="badge badge-green">发布排期</span>→
+            <span class="badge badge-green">复盘变现</span>
+          </div>
+          <p style="margin-top:16px;color:var(--text-secondary);">点击左侧菜单开始创作。建议首次使用先完成「赛道自测」，系统会为你推荐内容方向与发布节奏。</p>
+        </div>
+      </section>
+
+      <!-- Niche Test -->
+      <section id="view-niche" class="view hidden">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">赛道自测</h3></div>
+          <p style="color:var(--text-secondary);margin-top:0;">输入你的个人特长和可支配时间，AI 教练会推荐最适合你的赛道方向、内容形式与发布排期。</p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>个人特长 / 可输出内容</label>
+              <textarea id="niche-skills" placeholder="例如：擅长职场沟通、会摄影、了解数码产品、喜欢分享育儿经验..."></textarea>
+            </div>
+            <div class="form-group">
+              <label>每周可支配创作时间（小时）</label>
+              <input type="number" id="niche-time" placeholder="例如：10" min="1">
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>目标平台</label>
+              <select id="niche-platform">
+                <option value="douyin">抖音</option>
+                <option value="xiaohongshu">小红书</option>
+                <option value="shipinhao">视频号</option>
+                <option value="bilibili">B 站</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>内容偏好</label>
+              <select id="niche-preference">
+                <option value="talk">口播讲解</option>
+                <option value="vlog">生活 vlog</option>
+                <option value="review">测评种草</option>
+                <option value="knowledge">知识干货</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="btn-niche-generate" onclick="generateNiche()">生成赛道报告</button>
+        </div>
+        <div class="card hidden" id="niche-result">
+          <div class="card-header"><h3 class="card-title">赛道自测报告</h3><span class="badge badge-green">已保存</span></div>
+          <div id="niche-report-content"></div>
+        </div>
+      </section>
+
+      <!-- Daily Topics -->
+      <section id="view-topics" class="view hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">每日选题海</h3>
+            <div>
+              <button class="btn btn-secondary btn-sm" onclick="toggleAutoTask()" id="btn-auto">设置自动任务</button>
+              <button class="btn btn-primary btn-sm" onclick="refreshTopics()" style="margin-left:8px;">刷新选题</button>
+            </div>
+          </div>
+          <div id="topics-list" class="grid"></div>
+        </div>
+      </section>
+
+      <!-- Scripts -->
+      <section id="view-scripts" class="view hidden">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">脚本方案</h3></div>
+          <div id="scripts-list"></div>
+        </div>
+      </section>
+
+      <!-- Comments -->
+      <section id="view-comments" class="view hidden">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">评论区分析</h3></div>
+          <div class="form-row">
+            <div class="form-group" style="flex:1;">
+              <label>视频链接或 ID</label>
+              <input type="text" id="comment-url" placeholder="粘贴抖音/小红书/视频号链接">
+            </div>
+            <div class="form-group" style="display:flex;align-items:flex-end;">
+              <button class="btn btn-primary" onclick="analyzeComments()">分析评论</button>
+            </div>
+          </div>
+          <div id="comments-result"></div>
+        </div>
+      </section>
+
+      <!-- Viral Knowledge -->
+      <section id="view-viral" class="view hidden">
+        <div class="card">
+          <div class="card-header">
+            <h3 class="card-title">爆款知识库</h3>
+            <input type="text" id="viral-search" placeholder="搜索钩子类型或情绪..." style="width:240px;" oninput="searchHooks()">
+          </div>
+          <div id="viral-list" class="grid"></div>
+        </div>
+      </section>
+
+      <!-- Video Edit -->
+      <section id="view-edit" class="view hidden">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">视频精剪</h3></div>
+          <div id="edit-step-1">
+            <div class="upload-zone" onclick="document.getElementById('edit-file').click()">
+              <div class="empty-icon">📁</div>
+              <p>点击或拖拽上传拍摄素材</p>
+              <p style="font-size:12px;">支持 MP4 / MOV / WEBM</p>
+            </div>
+            <input type="file" id="edit-file" class="hidden" accept="video/*" onchange="handleEditUpload(event)">
+          </div>
+          <div id="edit-step-2" class="hidden">
+            <p><strong>已上传：</strong><span id="edit-filename"></span></p>
+            <h4 style="margin-top:20px;">选择精剪风格</h4>
+            <div class="grid" style="margin-top:12px;">
+              <div class="preset-card" onclick="selectPreset(this, 'viral')">
+                <h4>🔥 跟爆款节奏</h4>
+                <p style="font-size:13px;color:var(--text-secondary);">高密度 jump cut、强调字幕、快节奏音效</p>
+              </div>
+              <div class="preset-card" onclick="selectPreset(this, 'calm')">
+                <h4>🍃 沉稳口播</h4>
+                <p style="font-size:13px;color:var(--text-secondary);">长镜头、简洁字幕、轻背景音乐</p>
+              </div>
+              <div class="preset-card" onclick="selectPreset(this, 'story')">
+                <h4>🎬 故事感</h4>
+                <p style="font-size:13px;color:var(--text-secondary);">电影感转场、情绪音乐、B-roll 穿插</p>
+              </div>
+            </div>
+            <button class="btn btn-primary" style="margin-top:20px;" onclick="startFineEdit()">开始精剪</button>
+          </div>
+          <div id="edit-step-3" class="hidden">
+            <h4>精剪结果</h4>
+            <div class="timeline">
+              <div class="timeline-track" id="edit-timeline"></div>
+            </div>
+            <div id="edit-report" style="margin-top:20px;"></div>
+            <div style="margin-top:20px;">
+              <button class="btn btn-primary">导出精剪视频</button>
+              <button class="btn btn-secondary" style="margin-left:8px;">保存为我的风格</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Monetization -->
+      <section id="view-monetize" class="view hidden">
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">商业变现</h3></div>
+          <div class="upload-zone" onclick="document.getElementById('monetize-file').click()" style="padding:24px;">
+            <div class="empty-icon">📊</div>
+            <p>导入历史作品数据（CSV / Excel）</p>
+            <p style="font-size:12px;">包含：作品标题、播放量、点赞、评论、脚本</p>
+          </div>
+          <input type="file" id="monetize-file" class="hidden" onchange="handleMonetizeUpload(event)">
+          <div id="monetize-result" style="margin-top:20px;"></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // State
+    const state = {
+      currentView: 'dashboard',
+      user: { skills: '', time: 0, platform: 'douyin', preference: 'talk', niche: '' },
+      nicheReport: null,
+      topics: [],
+      scripts: [],
+      analyses: [],
+      editPreset: 'viral'
+    };
+
+    // Niche data
+    const nicheMap = {
+      'talk': ['职场成长', '情感共鸣', '知识科普'],
+      'vlog': ['生活方式', '旅行记录', '日常碎片'],
+      'review': ['数码测评', '美妆护肤', '家居好物'],
+      'knowledge': ['财经理财', '健康养生', '学习方法']
+    };
+
+    const platformNames = { douyin: '抖音', xiaohongshu: '小红书', shipinhao: '视频号', bilibili: 'B 站' };
+
+    // Mock topics
+    const topicTemplates = [
+      { title: '为什么你越努力，越容易被领导忽视？', emotion: '共鸣/职场', framework: '痛点开场→反常识观点→3个可操作建议→结尾互动', hooks: ['质疑常识', '共鸣痛点', '提供方案'] },
+      { title: '月入过万的人，都在悄悄做这3件事', emotion: '好奇/成长', framework: '数字悬念→逐条拆解→案例佐证→行动号召', hooks: ['数字悬念', '制造好奇', '利益诱惑'] },
+      { title: '这个习惯，让我从拖延症变成行动派', emotion: '励志/自我提升', framework: '前后对比→方法展示→坚持结果→鼓励关注', hooks: ['前后对比', '身份认同', '情感激励'] },
+      { title: '千万别再这样刷手机了！', emotion: '警示/健康', framework: '警告开场→危害说明→正确做法→总结提醒', hooks: ['恐吓警示', '制造焦虑', '给出解法'] },
+      { title: '普通人如何靠副业多赚5000块？', emotion: '欲望/搞钱', framework: '收益承诺→路径拆解→避坑指南→引导私信', hooks: ['收益诱惑', '路径拆解', '降低门槛'] }
+    ];
+
+    const viralHooks = [
+      { type: '质疑常识', emotion: '好奇', example: '你以为勤奋就能升职？错，真正升职的人都在做这件事...', usage: '职场、成长、认知类选题' },
+      { type: '数字悬念', emotion: '好奇', example: '这3个习惯，让我半年存下10万...', usage: '理财、效率、方法论选题' },
+      { type: '共鸣痛点', emotion: '委屈/共鸣', example: '有没有人和我一样，明明很努力，却总被忽视？', usage: '情感、职场、生活选题' },
+      { type: '前后对比', emotion: '励志', example: '一年前的我浑浑噩噩，现在的我每天5点起床...', usage: '成长、自律、逆袭选题' },
+      { type: '恐吓警示', emotion: '焦虑', example: '如果你还在这样做，真的别再继续了...', usage: '健康、安全、避坑选题' },
+      { type: '利益诱惑', emotion: '欲望', example: '掌握这一招，让你的播放量翻3倍', usage: '运营、技巧、变现选题' }
+    ];
+
+    // Navigation
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        item.classList.add('active');
+        const view = item.dataset.view;
+        switchView(view);
+      });
+    });
+
+    function switchView(view) {
+      document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+      document.getElementById('view-' + view).classList.remove('hidden');
+      state.currentView = view;
+      document.getElementById('page-title').textContent = {
+        dashboard: '工作台', niche: '赛道自测', topics: '每日选题海', scripts: '脚本方案',
+        comments: '评论区分析', viral: '爆款知识库', edit: '视频精剪', monetize: '商业变现'
+      }[view];
+      if (view === 'dashboard') renderDashboard();
+      if (view === 'topics') renderTopics();
+      if (view === 'scripts') renderScripts();
+      if (view === 'viral') renderViral();
+    }
+
+    function showToast(msg) {
+      const toast = document.getElementById('toast');
+      toast.textContent = msg;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2500);
+    }
+
+    // Dashboard
+    function renderDashboard() {
+      document.getElementById('stat-niche').textContent = state.nicheReport ? state.nicheReport.niche : '-';
+      document.getElementById('stat-topics').textContent = state.topics.length;
+      document.getElementById('stat-scripts').textContent = state.scripts.length;
+      document.getElementById('stat-ready').textContent = state.scripts.filter(s => s.status === '待拍摄').length;
+    }
+
+    // Niche generation
+    function generateNiche() {
+      const skills = document.getElementById('niche-skills').value.trim();
+      const time = parseInt(document.getElementById('niche-time').value);
+      const platform = document.getElementById('niche-platform').value;
+      const preference = document.getElementById('niche-preference').value;
+      if (!skills || skills.length < 5) { showToast('请详细描述你的特长'); return; }
+      if (!time || time < 1) { showToast('请输入有效的可支配时间'); return; }
+
+      state.user = { skills, time, platform, preference };
+      const candidates = nicheMap[preference] || nicheMap['talk'];
+      const niche = candidates[Math.floor(Math.random() * candidates.length)];
+      const weeklyCount = Math.max(1, Math.floor(time / 3));
+      const bestTime = platform === 'xiaohongshu' ? '19:00-21:00' : '18:00-20:00 / 21:00-23:00';
+      const forms = { talk: '口播讲解', vlog: 'vlog 短片', review: '测评种草', knowledge: '知识图文/口播' };
+
+      state.nicheReport = { niche, weeklyCount, bestTime, form: forms[preference], platform: platformNames[platform] };
+      document.getElementById('user-niche').textContent = niche;
+
+      const html = `
+        <div class="grid" style="margin-bottom:16px;">
+          <div class="stat-card"><div class="number">${niche}</div><div class="label">推荐赛道</div></div>
+          <div class="stat-card"><div class="number">${weeklyCount}</div><div class="label">建议周更频率</div></div>
+          <div class="stat-card"><div class="number">${bestTime}</div><div class="label">最佳发布时段</div></div>
+          <div class="stat-card"><div class="number">${forms[preference]}</div><div class="label">适合内容形式</div></div>
+        </div>
+        <h4>7 天发布排期模板</h4>
+        <table>
+          <tr><th>日期</th><th>内容方向</th><th>形式</th></tr>
+          ${[1,2,3,4,5,6,7].map(d => `<tr><td>第 ${d} 天</td><td>${d % 2 === 1 ? niche + '干货分享' : '互动/共鸣类内容'}</td><td>${d % 3 === 0 ? '短视频' : '口播'}</td></tr>`).join('')}
+        </table>
+      `;
+      document.getElementById('niche-report-content').innerHTML = html;
+      document.getElementById('niche-result').classList.remove('hidden');
+      showToast('赛道报告已生成');
+    }
+
+    // Topics
+    function refreshTopics() {
+      if (!state.nicheReport) { showToast('请先完成赛道自测'); switchView('niche'); return; }
+      const niche = state.nicheReport.niche;
+      state.topics = topicTemplates.map((t, i) => ({
+        id: Date.now() + i,
+        title: t.title.replace('职场', niche).replace('成长', niche),
+        emotion: t.emotion,
+        framework: t.framework,
+        hooks: t.hooks,
+        used: false
+      }));
+      renderTopics();
+      showToast('今日选题已刷新');
+    }
+
+    function renderTopics() {
+      const container = document.getElementById('topics-list');
+      if (state.topics.length === 0) {
+        container.innerHTML = '<div class="empty" style="grid-column:1/-1;"><div class="empty-icon">🌊</div><p>点击右上角“刷新选题”获取今日推荐</p></div>';
+        return;
+      }
+      container.innerHTML = state.topics.map(t => `
+        <div class="topic-card">
+          <span class="topic-tag">${t.emotion}</span>
+          <h4 class="topic-title">${t.title}</h4>
+          <div class="topic-meta">框架：${t.framework}</div>
+          <div class="hooks">${t.hooks.map(h => `<span class="hook-tag">${h}</span>`).join('')}</div>
+          <button class="btn btn-primary btn-sm" onclick="generateScript(${t.id})">生成脚本</button>
+        </div>
+      `).join('');
+    }
+
+    function toggleAutoTask() {
+      showToast('自动任务设置：每日 9:00 自动刷新选题（演示模式）');
+    }
+
+    // Scripts
+    function generateScript(topicId) {
+      const topic = state.topics.find(t => t.id === topicId);
+      if (!topic) return;
+      const script = {
+        id: Date.now(),
+        topicId,
+        title: topic.title,
+        hook: topic.hooks[0],
+        opening: `${topic.hooks[0]}！今天和大家聊聊一个很多人都没意识到的问题...`,
+        body: `首先，我们要明白${topic.emotion.split('/')[0]}背后的真正原因。\n其次，分享三个实用方法：\n1. 找到你的差异化表达；\n2. 用具体场景代替抽象道理；\n3. 在结尾留下互动钩子。`,
+        ending: '如果你也认同，记得点赞收藏，下期我们聊得更深。',
+        shooting: '场景：室内书桌前\n景别：中近景\n道具：手机支架、补光灯\n出镜要求：自然表情，眼神看镜头上方 1/3 处',
+        publish: `标题：${topic.title}\n封面文案：${topic.hooks[0]}！\n话题：#${state.nicheReport.niche} #自媒体干货 #短视频运营`,
+        status: '草稿',
+        createdAt: new Date().toLocaleDateString()
+      };
+      state.scripts.unshift(script);
+      topic.used = true;
+      showToast('脚本已生成');
+      switchView('scripts');
+    }
+
+    function renderScripts() {
+      const container = document.getElementById('scripts-list');
+      if (state.scripts.length === 0) {
+        container.innerHTML = '<div class="empty"><div class="empty-icon">📝</div><p>还没有脚本，去“每日选题海”生成一个吧</p></div>';
+        return;
+      }
+      container.innerHTML = state.scripts.map(s => `
+        <div class="card" style="margin-bottom:16px;">
+          <div class="card-header">
+            <h3 class="card-title">${s.title}</h3>
+            <span class="badge ${s.status === '待拍摄' ? 'badge-green' : 'badge-blue'}">${s.status}</span>
+          </div>
+          <div class="script-editor">
+            <div class="script-section"><h4>钩子</h4><div class="script-content">${s.hook}</div></div>
+            <div class="script-section"><h4>开头</h4><div class="script-content">${s.opening}</div></div>
+            <div class="script-section"><h4>正文</h4><div class="script-content">${s.body}</div></div>
+            <div class="script-section"><h4>结尾</h4><div class="script-content">${s.ending}</div></div>
+            <div class="script-section"><h4>拍摄要点</h4><div class="script-content">${s.shooting}</div></div>
+            <div class="script-section"><h4>发布建议</h4><div class="script-content">${s.publish}</div></div>
+          </div>
+          <div style="margin-top:16px;">
+            <button class="btn btn-success btn-sm" onclick="confirmScript(${s.id})">确认定稿</button>
+            <button class="btn btn-secondary btn-sm" onclick="rewriteScript(${s.id})">改写</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function confirmScript(id) {
+      const s = state.scripts.find(x => x.id === id);
+      if (s) { s.status = '待拍摄'; showToast('脚本已定为“待拍摄”'); renderScripts(); }
+    }
+
+    function rewriteScript(id) {
+      const s = state.scripts.find(x => x.id === id);
+      if (s) { s.opening += '（已改写版本）'; showToast('脚本已改写'); renderScripts(); }
+    }
+
+    // Comments analysis
+    function analyzeComments() {
+      const url = document.getElementById('comment-url').value.trim();
+      if (!url) { showToast('请输入视频链接'); return; }
+      const emotions = [
+        { name: '共鸣', value: 42 }, { name: '好奇', value: 28 }, { name: '质疑', value: 15 }, { name: '赞赏', value: 10 }, { name: '其他', value: 5 }
+      ];
+      const reasons = ['开头 3 秒直接抛出反常识观点', '解决了观众长期困惑的痛点', '评论区互动设计引发站队讨论'];
+      const html = `
+        <div class="analysis-chart">
+          ${emotions.map(e => `<div class="emotion-bubble"><div class="value">${e.value}%</div><div class="name">${e.name}</div></div>`).join('')}
+        </div>
+        <h4>爆火原因分析</h4>
+        <ul>${reasons.map(r => `<li>${r}</li>`).join('')}</ul>
+        <h4>观众需求地图</h4>
+        <p>高频关键词：<span class="badge badge-blue">方法</span> <span class="badge badge-blue">真实</span> <span class="badge badge-blue">共鸣</span> <span class="badge badge-purple">案例</span></p>
+      `;
+      document.getElementById('comments-result').innerHTML = html;
+      showToast('评论分析完成');
+    }
+
+    // Viral hooks
+    function renderViral() {
+      searchHooks();
+    }
+
+    function searchHooks() {
+      const q = document.getElementById('viral-search').value.toLowerCase();
+      const list = viralHooks.filter(h => h.type.includes(q) || h.emotion.includes(q) || h.usage.includes(q));
+      document.getElementById('viral-list').innerHTML = list.map(h => `
+        <div class="topic-card">
+          <div class="hooks"><span class="hook-tag">${h.type}</span><span class="hook-tag">${h.emotion}</span></div>
+          <p style="font-size:14px;margin:10px 0;line-height:1.6;"><strong>示例：</strong>${h.example}</p>
+          <p style="font-size:12px;color:var(--text-secondary);">适用：${h.usage}</p>
+        </div>
+      `).join('');
+    }
+
+    // Fine editing
+    function handleEditUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('edit-filename').textContent = file.name;
+      document.getElementById('edit-step-1').classList.add('hidden');
+      document.getElementById('edit-step-2').classList.remove('hidden');
+    }
+
+    function selectPreset(el, preset) {
+      document.querySelectorAll('.preset-card').forEach(c => c.classList.remove('selected'));
+      el.classList.add('selected');
+      state.editPreset = preset;
+    }
+
+    function startFineEdit() {
+      const presets = {
+        viral: ['去废片', 'jump cut × 12', '强调字幕 × 5', '音效 × 8', '快节奏 BGM'],
+        calm: ['去废片', '长镜头保留', '简洁字幕 × 3', '轻 BGM', '结尾定格'],
+        story: ['去废片', '电影感转场 × 4', 'B-roll × 6', '情绪音乐', '氛围音效 × 5']
+      };
+      const clips = presets[state.editPreset];
+      document.getElementById('edit-timeline').innerHTML = clips.map(c => `<div class="timeline-clip">${c}</div>`).join('');
+      document.getElementById('edit-report').innerHTML = `
+        <p><strong>精剪配方：</strong>${state.editPreset === 'viral' ? '跟爆款节奏' : state.editPreset === 'calm' ? '沉稳口播' : '故事感'}</p>
+        <p><strong>预计成片时长：</strong>45 秒</p>
+        <p><strong>节奏密度：</strong>${state.editPreset === 'viral' ? '高' : state.editPreset === 'calm' ? '低' : '中'}</p>
+        <p><strong>自动处理：</strong>已删除语气词与停顿，已按脚本段落对齐素材。</p>
+      `;
+      document.getElementById('edit-step-2').classList.add('hidden');
+      document.getElementById('edit-step-3').classList.remove('hidden');
+      showToast('精剪完成');
+    }
+
+    // Monetization
+    function handleMonetizeUpload(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      document.getElementById('monetize-result').innerHTML = `
+        <div class="card">
+          <div class="card-header"><h3 class="card-title">变现分析简报</h3></div>
+          <div class="grid" style="margin-bottom:16px;">
+            <div class="stat-card"><div class="number">职场成长</div><div class="label">高数据选题方向</div></div>
+            <div class="stat-card"><div class="number">25-35 岁</div><div class="label">核心观众年龄</div></div>
+            <div class="stat-card"><div class="number">知识付费</div><div class="label">潜力合作品类</div></div>
+            <div class="stat-card"><div class="number">¥3k-8k</div><div class="label">预估单条报价区间</div></div>
+          </div>
+          <h4>推荐合作品牌方向</h4>
+          <p>在线教育、效率工具、职场书籍、办公软件</p>
+          <h4 style="margin-top:16px;">客户沟通话术</h4>
+          <div class="script-content">您好，我是专注职场成长的创作者[昵称]，核心受众为25-35岁一二线城市白领，擅长用真实场景拆解职场痛点。近期爆款选题集中在沟通技巧与效率提升，与贵品牌目标用户高度匹配。期待有机会合作。</div>
+        </div>
+      `;
+      showToast('变现分析完成');
+    }
+
+    // Init
+    switchView('dashboard');
+  </script>
+</body>
+</html>
